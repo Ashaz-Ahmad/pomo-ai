@@ -1,6 +1,6 @@
 import { useState } from 'react';
 
-export default function TaskInput({ onAdd }: { onAdd: (task: string) => void }) {
+export default function TaskInput({ onAdd }: { onAdd: (taskName: string) => void }) {
     const [input, setInput] = useState('');
 
     const handleAdd = () => {
