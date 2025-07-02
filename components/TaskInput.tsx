@@ -13,7 +13,7 @@ export default function TaskInput({ onAdd }: { onAdd: (taskName: string) => void
 
     const handleKeyPress = (e: React.KeyboardEvent) => {
         if (e.key === "Enter") {
-            handleAdd()
+            handleAdd();
         }
     };
 
@@ -22,6 +22,8 @@ export default function TaskInput({ onAdd }: { onAdd: (taskName: string) => void
             <div className="flex gap-3">
                 <div className="flex-1 relative">
                     <input
+                        id="taskName"
+                        name="taskName"
                         type="text"
                         className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-red-500 focus:ring-2 focus:ring-red-500/20 outline-none transition-all duration-200 text-slate-800 placeholder-slate-400"
                         placeholder="What would you like to work on?"
@@ -37,6 +39,7 @@ export default function TaskInput({ onAdd }: { onAdd: (taskName: string) => void
                         }`}
                     onClick={handleAdd}
                     disabled={!input.trim()}
+                    aria-label="Add task"
                 >
                     <Plus className="w-4 h-4" />
                     Add Task

@@ -1,5 +1,6 @@
 import { Task } from '../types/task';
 import { CheckCircle, Circle, Target, Trash2, ClipboardList, Timer } from "lucide-react";
+import { useState } from 'react';
 
 export default function TaskList({
     tasks,
@@ -23,6 +24,17 @@ export default function TaskList({
             </div>
         )
     }
+
+    // Local state to track which task's complete button is temporarily disabled
+    const [debouncedTaskId, setDebouncedTaskId] = useState<string | null>(null);
+
+    const handleComplete = (taskId: string) => {
+        setDebouncedTaskId(taskId);
+        onToggleComplete(taskId);
+        setTimeout(() => {
+            setDebouncedTaskId(null);
+        }, 1500);
+    };
 
     return (
         <div className="space-y-3">
@@ -48,9 +60,7 @@ export default function TaskList({
                             </div>
 
                             <div className="flex-1 min-w-0">
-                                <p
-                                    className={`font-medium truncate ${task.completed ? "line-through text-slate-400" : "text-slate-800"}`}
-                                >
+                                <p className={`font-medium whitespace-normal break-words ${task.completed ? "line-through text-slate-400" : "text-slate-800"}`}>
                                     {task.name}
                                 </p>
                             </div>
@@ -72,7 +82,9 @@ export default function TaskList({
                                     ? "bg-green-600 text-white hover:bg-green-700"
                                     : "bg-green-500 text-white hover:bg-green-600"
                                     }`}
-                                onClick={() => onToggleComplete(task.id)}
+                                onClick={() => handleComplete(task.id)}
+                                aria-label={task.completed ? `Mark task '${task.name}' as incomplete` : `Mark task '${task.name}' as complete`}
+                                disabled={debouncedTaskId === task.id}
                             >
                                 <CheckCircle className="w-3 h-3" />
                                 {task.completed ? "Completed" : "Complete"}
@@ -85,6 +97,7 @@ export default function TaskList({
                                     } disabled:opacity-50 disabled:cursor-not-allowed`}
                                 onClick={() => onStart(task.id)}
                                 disabled={task.completed}
+                                aria-label={task.id === currentTaskId ? `Task '${task.name}' is active` : `Select task '${task.name}'`}
                             >
                                 <Target className="w-3 h-3" />
                                 {task.id === currentTaskId ? "Active" : "Select"}
@@ -93,7 +106,7 @@ export default function TaskList({
                             <button
                                 className="flex items-center gap-1 px-2 py-1.5 rounded-lg text-sm font-medium text-red-600 hover:bg-red-50 transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
                                 onClick={() => onRemove(task.id)}
-                                disabled={task.id === currentTaskId}
+                                aria-label={`Delete task '${task.name}'`}
                             >
                                 <Trash2 className="w-3 h-3" />
                             </button>

@@ -1,55 +1,120 @@
 import Head from 'next/head';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import TaskInput from '../components/TaskInput';
 import TaskList from '../components/TaskList';
 import PomodoroTimer from '../components/PomodoroTimer';
-import { Task } from '../types/task';
+import { Task, isTask } from '../types/task';
 import { ClipboardList } from "lucide-react";
+import toast from 'react-hot-toast';
+
+const DEFAULT_SECONDS = 25 * 60;
 
 export default function Home() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [currentTaskId, setCurrentTaskId] = useState<string | null>(null);
-  const currentTask = tasks.find((task) => task.id === currentTaskId) || null;
-  const [running, setRunning] = useState(false);
-  const [secondsLeft, setSecondsLeft] = useState(25 * 60);
+  const [recentlyCompletedTaskId, setRecentlyCompletedTaskId] = useState<string | null>(null);
+  const [timerRunning, setTimerRunning] = useState<boolean>(false);
 
+  // Load from localStorage on mount
+  useEffect(() => {
+    const storedTasks = localStorage.getItem('tasks');
+    const storedCurrentTaskId = localStorage.getItem('currentTaskId');
+    try {
+      const parsedTasks = storedTasks ? JSON.parse(storedTasks) : [];
+      const validTasks = parsedTasks.filter(isTask);
+      setTasks(validTasks);
+    } catch (error) {
+      setTasks([]);
+    }
+    if (storedCurrentTaskId) {
+      setCurrentTaskId(storedCurrentTaskId || null);
+    }
+  }, []);
+
+  // Persist tasks and currentTaskId
+  useEffect(() => {
+    localStorage.setItem('tasks', JSON.stringify(tasks));
+  }, [tasks]);
+  useEffect(() => {
+    localStorage.setItem('currentTaskId', currentTaskId ?? '');
+  }, [currentTaskId]);
+
+  // Clear recentlyCompletedTaskId after each render where it is set
+  useEffect(() => {
+    if (recentlyCompletedTaskId !== null) {
+      setRecentlyCompletedTaskId(null);
+    }
+  }, [recentlyCompletedTaskId]);
+
+  // Add a new task
   const addTask = (taskName: string) => {
     const newTask: Task = {
       id: crypto.randomUUID(),
       name: taskName,
       completed: false,
+      remainingSeconds: DEFAULT_SECONDS,
       pomodoros: 0,
     };
     setTasks([...tasks, newTask]);
   };
 
+  // Remove a task
   const removeTask = (id: string) => {
     if (id === currentTaskId) {
-      setCurrentTaskId(null);
+      toast.error("You cannot delete the selected task. Please select a different task first.");
+      return;
     }
-    setTasks(tasks.filter((task) => task.id !== id));
+    setTasks(tasks.filter(task => task.id !== id));
   };
 
+  // Start/select a task
   const startTask = (id: string) => {
     if (id === currentTaskId) {
+      // Deselecting the current task
+      if (timerRunning) {
+        toast.error("Please pause the current task's timer before deselecting it.");
+        return;
+      }
       setCurrentTaskId(null);
     } else {
+      // Selecting a new task
+      if (timerRunning) {
+        toast.error("Please pause the current task's timer before selecting another task.");
+        return;
+      }
       setCurrentTaskId(id);
     }
   };
 
+  // Complete a task
   const toggleTaskComplete = (id: string) => {
-    setTasks(tasks.map(task => task.id === id ? { ...task, completed: !task.completed } : task));
-
+    setTasks(prevTasks =>
+      prevTasks.map(task =>
+        task.id === id ? { ...task, completed: !task.completed } : task
+      )
+    );
+    setRecentlyCompletedTaskId(id);
     if (id === currentTaskId) {
       setCurrentTaskId(null);
-      setRunning(false);
-      setSecondsLeft(25 * 60);
     }
   };
 
+  // Increment pomodoros for a task
   const incrementPomodoros = (id: string) => {
-    setTasks(tasks.map(task => task.id === id ? { ...task, pomodoros: task.pomodoros + 1 } : task));
+    setTasks(prevTasks =>
+      prevTasks.map(task =>
+        task.id === id ? { ...task, pomodoros: task.pomodoros + 1 } : task
+      )
+    );
+  };
+
+  // Update remaining time for a task
+  const updateRemainingTime = (id: string, seconds: number) => {
+    setTasks(prevTasks =>
+      prevTasks.map(task =>
+        task.id === id ? { ...task, remainingSeconds: seconds } : task
+      )
+    );
   };
 
   return (
@@ -59,7 +124,6 @@ export default function Home() {
         <meta name="description" content="Pomodoro + Todo List AI Productivity Tool" />
         <link rel="icon" href="/timer.ico" />
       </Head>
-
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-red-50">
         {/* Header */}
         <div className="bg-white/80 backdrop-blur-sm border-b border-slate-200 py-6">
@@ -74,22 +138,19 @@ export default function Home() {
             </div>
           </div>
         </div>
-
         {/* Main Content */}
         <main className="max-w-6xl mx-auto px-6 py-8">
           <div className="grid lg:grid-cols-5 gap-8">
             {/* timer section */}
             <div className="space-y-6 lg:col-span-2">
               <PomodoroTimer
-                task={currentTask}
-                running={running}
-                setRunning={setRunning}
-                secondsLeft={secondsLeft}
-                setSecondsLeft={setSecondsLeft}
-                incrementPomodoros={incrementPomodoros}
+                task={tasks.find(t => t.id === currentTaskId) || null}
+                incrementPomos={incrementPomodoros}
+                updateTime={updateRemainingTime}
+                defaultSeconds={DEFAULT_SECONDS}
+                onRunningChange={setTimerRunning}
               />
             </div>
-
             {/* Tasks section */}
             <div className="space-y-6 lg:col-span-3">
               <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-6">
@@ -104,7 +165,6 @@ export default function Home() {
                     </span>
                   )}
                 </div>
-
                 <TaskInput onAdd={addTask} />
                 <TaskList
                   tasks={tasks}
@@ -118,7 +178,6 @@ export default function Home() {
           </div>
         </main>
       </div>
-
     </>
   );
 }

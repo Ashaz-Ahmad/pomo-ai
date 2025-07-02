@@ -1,55 +1,81 @@
-import { useEffect } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { Task } from '../types/task';
 import { Timer, Play, Pause, RotateCcw } from "lucide-react";
 
 export default function PomodoroTimer({
     task,
-    running,
-    setRunning,
-    secondsLeft,
-    setSecondsLeft,
-    incrementPomodoros,
+    incrementPomos,
+    updateTime,
+    defaultSeconds = 25 * 60,
+    onRunningChange,
 }: {
     task: Task | null;
-    running: boolean;
-    setRunning: React.Dispatch<React.SetStateAction<boolean>>;
-    secondsLeft: number;
-    setSecondsLeft: React.Dispatch<React.SetStateAction<number>>;
-    incrementPomodoros: (id: string) => void;
+    incrementPomos: (id: string) => void;
+    updateTime: (id: string, seconds: number) => void;
+    defaultSeconds?: number;
+    onRunningChange?: (running: boolean) => void;
 }) {
+    const [secondsLeft, setSecondsLeft] = useState(defaultSeconds);
+    const [running, setRunning] = useState(false);
+    const prevTaskId = useRef<string | null>(null);
 
+    // Notify parent when running changes
     useEffect(() => {
-        let timer: NodeJS.Timeout;
-        if (task && running && secondsLeft > 0) {
-            timer = setTimeout(() => setSecondsLeft(prevSecondsLeft => prevSecondsLeft - 1), 1000);
-        } else if (task && running && secondsLeft === 0) {
-            incrementPomodoros(task.id);
-            setRunning(false);
-            setSecondsLeft(25 * 60);
-        }
-        return () => clearTimeout(timer);
-    }, [task, running, secondsLeft, setSecondsLeft, setRunning, incrementPomodoros]);
+        if (onRunningChange) onRunningChange(running);
+    }, [running, onRunningChange]);
 
+    // Reset timer when task changes
+    useEffect(() => {
+        if (task && task.id !== prevTaskId.current) {
+            setSecondsLeft(task.remainingSeconds ?? defaultSeconds);
+            setRunning(false);
+            prevTaskId.current = task.id;
+        } else if (!task && prevTaskId.current !== null) {
+            setSecondsLeft(defaultSeconds);
+            setRunning(false);
+            prevTaskId.current = null;
+        }
+    }, [task, defaultSeconds]);
+
+    // Timer countdown
+    useEffect(() => {
+        let timer: NodeJS.Timeout | null = null;
+        if (task && running && secondsLeft > 0) {
+            timer = setTimeout(() => setSecondsLeft(prev => prev - 1), 1000);
+        } else if (task && running && secondsLeft === 0) {
+            incrementPomos(task.id);
+            setRunning(false);
+            setSecondsLeft(defaultSeconds);
+        }
+        return () => { if (timer) clearTimeout(timer); };
+    }, [task, running, secondsLeft, incrementPomos, defaultSeconds]);
+
+    // Sync with parent for persistence
+    useEffect(() => {
+        if (task && task.id && running) {
+            updateTime(task.id, secondsLeft);
+        }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [secondsLeft]);
 
     const toggleTimer = () => {
         if (!task) return;
-
         if (secondsLeft === 0) {
-            setSecondsLeft(25 * 60); // start fresh if at zero
+            setSecondsLeft(defaultSeconds);
             setRunning(true);
         } else {
-            setRunning(!running); // toggle pause/resume
+            setRunning(!running);
         }
     };
 
     const reset = () => {
-        setSecondsLeft(25 * 60);
+        setSecondsLeft(defaultSeconds);
         setRunning(false);
     };
 
     const minutes = Math.floor(secondsLeft / 60);
     const seconds = secondsLeft % 60;
-    const progress = ((25 * 60 - secondsLeft) / (25 * 60)) * 100;
+    const progress = ((defaultSeconds - secondsLeft) / defaultSeconds) * 100;
 
     return (
         <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-8">
@@ -111,10 +137,14 @@ export default function PomodoroTimer({
                     {/* Timer Text */}
                     <div className="absolute inset-0 flex items-center justify-center">
                         <div className="text-center">
-                            <div className="text-4xl font-mono font-bold text-slate-800 mb-1">
+                            <div 
+                                className="text-4xl font-mono font-bold text-slate-800 mb-1"
+                                aria-live="polite"
+                                aria-atomic="true"
+                            >
                                 {String(minutes).padStart(2, "0")}:{String(seconds).padStart(2, "0")}
                             </div>
-                            {running && task && (
+                            {task && (
                                 <div className="text-sm text-slate-500 font-medium">Session {task.pomodoros + 1}</div>
                             )}
                         </div>
@@ -131,6 +161,7 @@ export default function PomodoroTimer({
                         }`}
                     onClick={toggleTimer}
                     disabled={!task}
+                    aria-label={running ? "Pause timer" : "Start timer"}
                 >
                     {running ? <Pause className="w-4 h-4" /> : <Play className="w-4 h-4" />}
                     {running ? "Pause" : "Start"}
@@ -138,6 +169,7 @@ export default function PomodoroTimer({
                 <button
                     className="flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-all duration-200 transform hover:scale-105"
                     onClick={reset}
+                    aria-label="Reset timer"
                 >
                     <RotateCcw className="w-4 h-4" />
                     Reset
