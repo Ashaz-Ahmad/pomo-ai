@@ -15,6 +15,9 @@ export default function TaskList({
     onStart: (id: string) => void;
     onToggleComplete: (id: string) => void;
 }) {
+    // Local state to track which task's complete button is temporarily disabled
+    const [debouncedTaskId, setDebouncedTaskId] = useState<string | null>(null);
+
     if (tasks.length === 0) {
         return (
             <div className="text-center py-12 flex flex-col items-center justify-center min-h-[400px]">
@@ -24,9 +27,6 @@ export default function TaskList({
             </div>
         )
     }
-
-    // Local state to track which task's complete button is temporarily disabled
-    const [debouncedTaskId, setDebouncedTaskId] = useState<string | null>(null);
 
     const handleComplete = (taskId: string) => {
         setDebouncedTaskId(taskId);

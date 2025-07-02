@@ -23,7 +23,7 @@ export default function Home() {
       const parsedTasks = storedTasks ? JSON.parse(storedTasks) : [];
       const validTasks = parsedTasks.filter(isTask);
       setTasks(validTasks);
-    } catch (error) {
+    } catch {
       setTasks([]);
     }
     if (storedCurrentTaskId) {
