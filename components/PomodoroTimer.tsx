@@ -116,7 +116,7 @@ export default function PomodoroTimer({
         const persisted = localStorage.getItem('pomo_break_state');
         if (persisted) {
             try {
-                const { mode: savedMode, secondsLeft: savedSeconds, running: savedRunning } = JSON.parse(persisted);
+                const { mode: savedMode, secondsLeft: savedSeconds } = JSON.parse(persisted);
                 if ((savedMode === 'shortBreak' || savedMode === 'longBreak') && typeof savedSeconds === 'number') {
                     setMode(savedMode);
                     setSecondsLeft(savedSeconds);
