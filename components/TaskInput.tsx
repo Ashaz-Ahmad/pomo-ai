@@ -1,21 +1,29 @@
-import { useState } from 'react';
+import { useState, useCallback, memo } from 'react';
 import { Plus } from "lucide-react";
 
-export default function TaskInput({ onAdd }: { onAdd: (taskName: string) => void }) {
+interface TaskInputProps {
+    onAdd: (taskName: string) => void;
+}
+
+const TaskInput = memo(function TaskInput({ onAdd }: TaskInputProps) {
     const [input, setInput] = useState('');
 
-    const handleAdd = () => {
+    const handleAdd = useCallback(() => {
         if (input.trim()) {
             onAdd(input.trim());
             setInput('');
         }
-    };
+    }, [input, onAdd]);
 
-    const handleKeyPress = (e: React.KeyboardEvent) => {
+    const handleKeyPress = useCallback((e: React.KeyboardEvent) => {
         if (e.key === "Enter") {
             handleAdd();
         }
-    };
+    }, [handleAdd]);
+
+    const handleInputChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+        setInput(e.target.value);
+    }, []);
 
     return (
         <div className="mb-6">
@@ -28,7 +36,7 @@ export default function TaskInput({ onAdd }: { onAdd: (taskName: string) => void
                         className="w-full px-4 py-3 rounded-xl border border-slate-200 focus:border-red-500 focus:ring-2 focus:ring-red-500/20 outline-none transition-all duration-200 text-slate-800 placeholder-slate-400"
                         placeholder="What would you like to work on?"
                         value={input}
-                        onChange={(e) => setInput(e.target.value)}
+                        onChange={handleInputChange}
                         onKeyUp={handleKeyPress}
                     />
                 </div>
@@ -47,4 +55,6 @@ export default function TaskInput({ onAdd }: { onAdd: (taskName: string) => void
             </div>
         </div>
     );
-}
+});
+
+export default TaskInput;
