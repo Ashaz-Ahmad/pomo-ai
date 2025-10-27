@@ -124,7 +124,7 @@ const TaskList = memo(function TaskList({
                                 </span>
                             </div>
                             <div className="flex flex-col items-center gap-1 flex-shrink-0">
-                                <span className="text-[9px] text-slate-400 uppercase font-semibold">Est</span>
+                                <span className="text-[9px] text-slate-400 uppercase font-semibold">Est.</span>
                                 <input
                                     type="number"
                                     min="0"
