@@ -13,6 +13,8 @@ const DEFAULT_SETTINGS = {
   shortBreak: 5,
   longBreak: 15,
   longBreakInterval: 4,
+  soundEnabled: true,
+  soundVolume: 0.3,
 };
 
 export default function Home() {
@@ -122,6 +124,15 @@ export default function Home() {
     setTasks(prevTasks =>
       prevTasks.map(task =>
         task.id === id ? { ...task, remainingSeconds: seconds } : task
+      )
+    );
+  }, []);
+
+  // Update estimated pomos for a task
+  const updateEstimatedPomos = useCallback((id: string, estimatedPomos: number) => {
+    setTasks(prevTasks =>
+      prevTasks.map(task =>
+        task.id === id ? { ...task, estimatedPomos } : task
       )
     );
   }, []);
@@ -242,6 +253,8 @@ export default function Home() {
                   onModeChange={setTimerMode}
                   completedWorkSessions={completedWorkSessions}
                   setCompletedWorkSessions={setCompletedWorkSessions}
+                  soundEnabled={settings.soundEnabled}
+                  soundVolume={settings.soundVolume}
                 />
               </div>
               {/* Tasks section */}
@@ -254,6 +267,7 @@ export default function Home() {
                     onRemove={removeTask}
                     onStart={startTask}
                     onToggleComplete={toggleTaskComplete}
+                    onUpdateEstimatedPomos={updateEstimatedPomos}
                     mode={timerMode}
                   />
                 </div>
@@ -268,6 +282,8 @@ export default function Home() {
         initialShortBreak={settings.shortBreak}
         initialLongBreak={settings.longBreak}
         initialLongBreakInterval={settings.longBreakInterval}
+        initialSoundEnabled={settings.soundEnabled}
+        initialSoundVolume={settings.soundVolume}
         mode={timerMode}
         onSave={newSettings => {
           // Update all unstarted tasks to use new work session length
@@ -276,7 +292,7 @@ export default function Home() {
           ));
           setSettings(newSettings);
           setSettingsOpen(false);
-          toast.success('Session settings successfully updated.');
+          toast.success('Settings successfully updated.');
         }}
         onClose={() => setSettingsOpen(false)}
         disableSave={timerRunning}

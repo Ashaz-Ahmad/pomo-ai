@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 interface SettingsModalProps {
   isOpen: boolean;
@@ -6,16 +6,60 @@ interface SettingsModalProps {
   initialShortBreak: number;
   initialLongBreak: number;
   initialLongBreakInterval: number;
+  initialSoundEnabled: boolean;
+  initialSoundVolume: number;
   onSave: (settings: {
     work: number;
     shortBreak: number;
     longBreak: number;
     longBreakInterval: number;
+    soundEnabled: boolean;
+    soundVolume: number;
   }) => void;
   onClose: () => void;
   disableSave?: boolean;
   mode?: 'work' | 'shortBreak' | 'longBreak';
 }
+
+// Shared AudioContext for all sounds
+let sharedAudioContext: AudioContext | null = null;
+function getAudioContext() {
+  if (!sharedAudioContext || sharedAudioContext.state === 'closed') {
+    const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+    sharedAudioContext = new AudioContextClass();
+  }
+  return sharedAudioContext;
+}
+
+const createTone = (frequency: number, duration: number, volume: number = 0.3) => {
+  const audioContext = getAudioContext();
+  const oscillator = audioContext.createOscillator();
+  const gainNode = audioContext.createGain();
+  oscillator.connect(gainNode);
+  gainNode.connect(audioContext.destination);
+  oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
+  oscillator.type = 'sine';
+  gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+  gainNode.gain.linearRampToValueAtTime(volume, audioContext.currentTime + 0.1);
+  gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+  oscillator.start(audioContext.currentTime);
+  oscillator.stop(audioContext.currentTime + duration);
+  return audioContext;
+};
+const playWorkCompletionSound = (volume: number = 0.3) => {
+  const frequencies = [523.25, 659.25, 783.99]; // C5, E5, G5 - ascending chord
+  const duration = 0.5;
+  const gap = 0.3;
+  const repeat = 6;
+  const repeatGap = 0.25;
+  for (let r = 0; r < repeat; r++) {
+    frequencies.forEach((freq, index) => {
+      setTimeout(() => {
+        createTone(freq, duration, volume);
+      }, r * ((frequencies.length * (duration + gap)) + repeatGap * 1000) + index * (duration + gap) * 1000);
+    });
+  }
+};
 
 const SettingsModal: React.FC<SettingsModalProps> = ({
   isOpen,
@@ -23,6 +67,8 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
   initialShortBreak,
   initialLongBreak,
   initialLongBreakInterval,
+  initialSoundEnabled,
+  initialSoundVolume,
   onSave,
   onClose,
   disableSave,
@@ -32,6 +78,20 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
   const [shortBreak, setShortBreak] = useState(initialShortBreak.toString());
   const [longBreak, setLongBreak] = useState(initialLongBreak.toString());
   const [longBreakInterval, setLongBreakInterval] = useState(initialLongBreakInterval.toString());
+  const [soundEnabled, setSoundEnabled] = useState(initialSoundEnabled);
+  const [soundVolume, setSoundVolume] = useState(initialSoundVolume);
+
+  // Reset state when modal opens with new props
+  useEffect(() => {
+    if (isOpen) {
+      setWork(initialWork.toString());
+      setShortBreak(initialShortBreak.toString());
+      setLongBreak(initialLongBreak.toString());
+      setLongBreakInterval(initialLongBreakInterval.toString());
+      setSoundEnabled(initialSoundEnabled);
+      setSoundVolume(initialSoundVolume);
+    }
+  }, [isOpen, initialWork, initialShortBreak, initialLongBreak, initialLongBreakInterval, initialSoundEnabled, initialSoundVolume]);
 
   const handleSave = () => {
     // Validate and convert to numbers
@@ -40,7 +100,14 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
     const l = parseInt(longBreak, 10);
     const li = parseInt(longBreakInterval, 10);
     if (isNaN(w) || isNaN(s) || isNaN(l) || isNaN(li) || w < 1 || s < 1 || l < 1 || li < 1) return;
-    onSave({ work: w, shortBreak: s, longBreak: l, longBreakInterval: li });
+    onSave({ 
+      work: w, 
+      shortBreak: s, 
+      longBreak: l, 
+      longBreakInterval: li,
+      soundEnabled,
+      soundVolume
+    });
   };
 
   if (!isOpen) return null;
@@ -52,15 +119,15 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-      <div className="bg-white rounded-2xl shadow-xl p-8 w-full max-w-md relative">
-        <h2 className="text-2xl font-bold mb-6 text-slate-800">Timer Settings</h2>
+      <div className="bg-white rounded-2xl shadow-xl p-4 sm:p-8 w-full max-w-md relative max-h-[90vh] overflow-y-auto">
+        <h2 className="text-lg sm:text-2xl font-bold mb-4 sm:mb-6 text-slate-800">Timer Settings</h2>
         <form
           onSubmit={e => {
             e.preventDefault();
             handleSave();
           }}
         >
-          <div className="space-y-4">
+          <div className="space-y-2 sm:space-y-4">
             <div>
               <label className="block text-slate-700 font-medium mb-1" htmlFor="work">Pomodoro (work) duration (minutes)</label>
               <input
@@ -70,7 +137,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                 pattern="[0-9]*"
                 minLength={1}
                 maxLength={3}
-                className="w-full px-4 py-2 rounded-lg border border-slate-200 focus:border-red-500 focus:ring-2 focus:ring-red-500/20 outline-none text-slate-800 placeholder-slate-500"
+                className="w-full px-3 py-2 rounded-md border border-slate-200 focus:border-red-500 focus:ring-2 focus:ring-red-500/20 outline-none text-slate-800 placeholder-slate-500"
                 value={work}
                 onChange={e => setWork(e.target.value.replace(/[^0-9]/g, ''))}
                 placeholder="25"
@@ -86,7 +153,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                 pattern="[0-9]*"
                 minLength={1}
                 maxLength={2}
-                className="w-full px-4 py-2 rounded-lg border border-slate-200 focus:border-red-500 focus:ring-2 focus:ring-red-500/20 outline-none text-slate-800 placeholder-slate-500"
+                className="w-full px-3 py-2 rounded-md border border-slate-200 focus:border-red-500 focus:ring-2 focus:ring-red-500/20 outline-none text-slate-800 placeholder-slate-500"
                 value={shortBreak}
                 onChange={e => setShortBreak(e.target.value.replace(/[^0-9]/g, ''))}
                 placeholder="5"
@@ -102,7 +169,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                 pattern="[0-9]*"
                 minLength={1}
                 maxLength={2}
-                className="w-full px-4 py-2 rounded-lg border border-slate-200 focus:border-red-500 focus:ring-2 focus:ring-red-500/20 outline-none text-slate-800 placeholder-slate-500"
+                className="w-full px-3 py-2 rounded-md border border-slate-200 focus:border-red-500 focus:ring-2 focus:ring-red-500/20 outline-none text-slate-800 placeholder-slate-500"
                 value={longBreak}
                 onChange={e => setLongBreak(e.target.value.replace(/[^0-9]/g, ''))}
                 placeholder="15"
@@ -118,30 +185,83 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                 pattern="[0-9]*"
                 minLength={1}
                 maxLength={2}
-                className="w-full px-4 py-2 rounded-lg border border-slate-200 focus:border-red-500 focus:ring-2 focus:ring-red-500/20 outline-none text-slate-800 placeholder-slate-500"
+                className="w-full px-3 py-2 rounded-md border border-slate-200 focus:border-red-500 focus:ring-2 focus:ring-red-500/20 outline-none text-slate-800 placeholder-slate-500"
                 value={longBreakInterval}
                 onChange={e => setLongBreakInterval(e.target.value.replace(/[^0-9]/g, ''))}
                 placeholder="4"
                 required
               />
             </div>
-          </div>
-          <div className="flex flex-col justify-end gap-2 mt-8">
-            <div className="text-sm text-orange-600 bg-orange-50 border border-orange-200 rounded px-3 py-2 mb-2 flex items-center gap-2">
-              <svg className="w-8 h-8 text-orange-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M21 12A9 9 0 1 1 3 12a9 9 0 0 1 18 0ZM12 7v.01"/></svg>
+            <div className="text-sm text-orange-600 bg-orange-50 border border-orange-200 rounded px-3 py-2 flex items-center gap-2">
+              <svg className="w-6 h-6 sm:w-8 sm:h-8 text-orange-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M21 12A9 9 0 1 1 3 12a9 9 0 0 1 18 0ZM12 7v.01"/></svg>
               Duration settings will be applied to all tasks. Changing them will reset the timers across all tasks.
             </div>
-            <div className="flex justify-end gap-3">
+            {/* Sound Settings section follows */}
+            <div className="border-t border-slate-200 pt-2 sm:pt-4 mt-2 sm:mt-4">
+              <h3 className="text-lg sm:text-2xl font-bold mb-2 sm:mb-6 text-slate-800">Sound Settings</h3>
+              <div className="flex items-center justify-between mb-2 sm:mb-3">
+                <label className="text-slate-700 font-medium" htmlFor="soundEnabled">
+                  Enable timer sounds (recommended)
+                </label>
+                <button
+                  type="button"
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-red-500/20 ${
+                    soundEnabled ? 'bg-red-500' : 'bg-slate-300'
+                  }`}
+                  onClick={() => setSoundEnabled(!soundEnabled)}
+                  aria-label={soundEnabled ? 'Disable sounds' : 'Enable sounds'}
+                >
+                  <span
+                    className={`inline-block h-4 w-4 transform rounded-full bg-white transition-transform ${
+                      soundEnabled ? 'translate-x-6' : 'translate-x-1'
+                    }`}
+                  />
+                </button>
+              </div>
+              {soundEnabled && (
+                <div>
+                  <label className="block text-slate-700 font-medium mb-1" htmlFor="soundVolume">
+                    Sound volume: {Math.round(soundVolume * 100)}%
+                  </label>
+                  <input
+                    id="soundVolume"
+                    type="range"
+                    min="0"
+                    max="1"
+                    step="0.1"
+                    className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer slider"
+                    value={soundVolume}
+                    onChange={e => setSoundVolume(parseFloat(e.target.value))}
+                  />
+                  <div className="grid grid-cols-3 text-xs text-slate-500 mt-1">
+                    <span className="text-left">0%</span>
+                    <span className="text-center">50%</span>
+                    <span className="text-right">100%</span>
+                  </div>
+                  {/* Test Sound Button */}
+                  <button
+                    type="button"
+                    className="mt-2 px-3 py-2 rounded-md bg-red-500 hover:bg-red-600 text-white font-semibold shadow"
+                    onClick={() => playWorkCompletionSound(soundVolume)}
+                  >
+                    Test Sound
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+          <div className="flex flex-col justify-end gap-2 mt-4 sm:mt-8">
+            <div className="flex justify-end gap-2 sm:gap-3">
               <button
                 type="button"
-                className="px-4 py-2 rounded-lg bg-slate-100 text-slate-700 font-semibold hover:bg-slate-200"
+                className="px-3 py-2 rounded-md bg-slate-100 text-slate-700 font-semibold hover:bg-slate-200"
                 onClick={onClose}
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className={`px-4 py-2 rounded-lg text-white font-semibold shadow-lg disabled:opacity-60 disabled:cursor-not-allowed ${saveButtonColor}`}
+                className={`px-3 py-2 rounded-md text-white font-semibold shadow-lg disabled:opacity-60 disabled:cursor-not-allowed ${saveButtonColor}`}
                 disabled={disableSave}
                 title={disableSave ? 'Pause the timer to save settings.' : undefined}
               >
@@ -156,7 +276,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
           </div>
         </form>
         <button
-          className="absolute top-3 right-3 text-slate-400 hover:text-red-500 text-2xl font-bold focus:outline-none"
+          className="absolute top-2 right-2 sm:top-3 sm:right-3 text-slate-400 hover:text-red-500 text-2xl font-bold focus:outline-none"
           onClick={onClose}
           aria-label="Close settings"
         >

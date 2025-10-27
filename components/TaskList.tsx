@@ -38,6 +38,7 @@ interface TaskListProps {
     onRemove: (id: string) => void;
     onStart: (id: string) => void;
     onToggleComplete: (id: string) => void;
+    onUpdateEstimatedPomos: (id: string, estimatedPomos: number) => void;
     mode?: 'work' | 'shortBreak' | 'longBreak';
 }
 
@@ -47,6 +48,7 @@ const TaskList = memo(function TaskList({
     onRemove,
     onStart,
     onToggleComplete,
+    onUpdateEstimatedPomos,
     mode = 'work',
 }: TaskListProps) {
     // Local state to track which task's complete button is temporarily disabled
@@ -112,13 +114,41 @@ const TaskList = memo(function TaskList({
                                     {task.name}
                                 </p>
                             </div>
-                            <div className="flex items-center gap-1 flex-shrink-0">
+                            <div className="flex flex-col items-center gap-1 flex-shrink-0">
+                                <span className="text-[9px] text-slate-400 uppercase font-semibold">Actual</span>
                                 <span
                                     className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-bold ${task.id === currentTaskId ? modeColors[mode].pomoBadge : 'bg-slate-100 text-slate-500'}`}
                                 >
                                     <Timer className="w-3 h-3" />
                                     {task.pomodoros}
                                 </span>
+                            </div>
+                            <div className="flex flex-col items-center gap-1 flex-shrink-0">
+                                <span className="text-[9px] text-slate-400 uppercase font-semibold">Est.</span>
+                                <input
+                                    type="number"
+                                    min="0"
+                                    max="999"
+                                    value={task.estimatedPomos || ''}
+                                    onChange={(e) => {
+                                        const value = e.target.value;
+                                        if (value === '') {
+                                            onUpdateEstimatedPomos(task.id, 0);
+                                        } else {
+                                            const numValue = parseInt(value, 10);
+                                            if (!isNaN(numValue) && numValue >= 0) {
+                                                onUpdateEstimatedPomos(task.id, numValue);
+                                            }
+                                        }
+                                    }}
+                                    placeholder="?"
+                                    title="Estimated pomodoros"
+                                    className={`w-10 px-2 py-1 rounded-full text-xs font-bold text-center border focus:ring-2 focus:outline-none ${
+                                        task.id === currentTaskId
+                                            ? 'bg-red-100 text-red-700 border-red-300 focus:border-red-500 focus:ring-red-500'
+                                            : 'bg-slate-100 text-slate-500 border-slate-300 focus:border-red-500 focus:ring-red-500'
+                                    }`}
+                                />
                             </div>
                         </div>
                         {/* Actions row: always horizontal, wrap on mobile if needed */}
