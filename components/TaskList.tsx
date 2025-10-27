@@ -115,7 +115,7 @@ const TaskList = memo(function TaskList({
                                 </p>
                             </div>
                             <div className="flex flex-col items-center gap-1 flex-shrink-0">
-                                <span className="text-[9px] text-slate-400 uppercase font-semibold">Actual</span>
+                                <span className="text-[9px] text-slate-400 uppercase font-semibold">Pomos</span>
                                 <span
                                     className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-bold ${task.id === currentTaskId ? modeColors[mode].pomoBadge : 'bg-slate-100 text-slate-500'}`}
                                 >
@@ -124,7 +124,7 @@ const TaskList = memo(function TaskList({
                                 </span>
                             </div>
                             <div className="flex flex-col items-center gap-1 flex-shrink-0">
-                                <span className="text-[9px] text-slate-400 uppercase font-semibold">Est.</span>
+                                <span className="text-[9px] text-slate-400 uppercase font-semibold">Est. Pomos</span>
                                 <input
                                     type="number"
                                     min="0"
