@@ -128,6 +128,15 @@ export default function Home() {
     );
   }, []);
 
+  // Update estimated pomos for a task
+  const updateEstimatedPomos = useCallback((id: string, estimatedPomos: number) => {
+    setTasks(prevTasks =>
+      prevTasks.map(task =>
+        task.id === id ? { ...task, estimatedPomos } : task
+      )
+    );
+  }, []);
+
   // Load from localStorage on mount
   useEffect(() => {
     const storedTasks = localStorage.getItem('tasks');
@@ -258,6 +267,7 @@ export default function Home() {
                     onRemove={removeTask}
                     onStart={startTask}
                     onToggleComplete={toggleTaskComplete}
+                    onUpdateEstimatedPomos={updateEstimatedPomos}
                     mode={timerMode}
                   />
                 </div>
