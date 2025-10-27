@@ -22,14 +22,7 @@ interface SettingsModalProps {
 }
 
 // Shared AudioContext for all sounds
-let sharedAudioContext: AudioContext | null = null;
-function getAudioContext() {
-  if (!sharedAudioContext || sharedAudioContext.state === 'closed') {
-    const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
-    sharedAudioContext = new AudioContextClass();
-  }
-  return sharedAudioContext;
-}
+import { getAudioContext } from '../utils/audioContext';
 
 const createTone = (frequency: number, duration: number, volume: number = 0.3) => {
   const audioContext = getAudioContext();
