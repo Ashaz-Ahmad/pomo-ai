@@ -2,6 +2,67 @@ import { useEffect, useState, useRef, useCallback } from 'react';
 import { Task } from '../types/task';
 import { Timer, Play, Pause, RotateCcw, SkipForward } from "lucide-react";
 
+// Shared AudioContext for all sounds
+let sharedAudioContext: AudioContext | null = null;
+function getAudioContext() {
+  if (!sharedAudioContext || sharedAudioContext.state === 'closed') {
+    const AudioContextClass = window.AudioContext || (window as unknown as { webkitAudioContext: typeof AudioContext }).webkitAudioContext;
+    sharedAudioContext = new AudioContextClass();
+  }
+  return sharedAudioContext;
+}
+
+const createTone = (frequency: number, duration: number, volume: number = 0.3) => {
+    const audioContext = getAudioContext();
+    const oscillator = audioContext.createOscillator();
+    const gainNode = audioContext.createGain();
+    
+    oscillator.connect(gainNode);
+    gainNode.connect(audioContext.destination);
+    
+    oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
+    oscillator.type = 'sine';
+    
+    gainNode.gain.setValueAtTime(0, audioContext.currentTime);
+    gainNode.gain.linearRampToValueAtTime(volume, audioContext.currentTime + 0.1);
+    gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+    
+    oscillator.start(audioContext.currentTime);
+    oscillator.stop(audioContext.currentTime + duration);
+    
+    return audioContext;
+};
+
+const playWorkCompletionSound = (volume: number = 0.3) => {
+    const frequencies = [523.25, 659.25, 783.99]; // C5, E5, G5 - ascending chord
+    const duration = 0.5;
+    const gap = 0.3;
+    const repeat = 6;
+    const repeatGap = 0.25;
+    for (let r = 0; r < repeat; r++) {
+        frequencies.forEach((freq, index) => {
+            setTimeout(() => {
+                createTone(freq, duration, volume);
+            }, r * ((frequencies.length * (duration + gap)) + repeatGap * 1000) + index * (duration + gap) * 1000);
+        });
+    }
+};
+
+const playBreakCompletionSound = (volume: number = 0.3) => {
+    const frequencies = [783.99, 659.25]; // G5, E5 - descending notes
+    const duration = 0.6;
+    const gap = 0.4;
+    const repeat = 6;
+    const repeatGap = 0.25;
+    for (let r = 0; r < repeat; r++) {
+        frequencies.forEach((freq, index) => {
+            setTimeout(() => {
+                createTone(freq, duration, volume);
+            }, r * ((frequencies.length * (duration + gap)) + repeatGap * 1000) + index * (duration + gap) * 1000);
+        });
+    }
+};
+
 export default function PomodoroTimer({
     task,
     incrementPomos,
@@ -14,6 +75,8 @@ export default function PomodoroTimer({
     onModeChange,
     completedWorkSessions,
     setCompletedWorkSessions,
+    soundEnabled = true,
+    soundVolume = 0.3,
 }: {
     task: Task | null;
     incrementPomos: (id: string) => void;
@@ -26,6 +89,8 @@ export default function PomodoroTimer({
     onModeChange?: (mode: 'work' | 'shortBreak' | 'longBreak') => void;
     completedWorkSessions: number;
     setCompletedWorkSessions: React.Dispatch<React.SetStateAction<number>>;
+    soundEnabled?: boolean;
+    soundVolume?: number;
 }) {
     const [mode, setMode] = useState<'work' | 'shortBreak' | 'longBreak'>('work');
     const [secondsLeft, setSecondsLeft] = useState(workDuration);
@@ -79,6 +144,11 @@ export default function PomodoroTimer({
         if (!task) return;
 
         if (mode === 'work') {
+            // Play work completion sound
+            if (soundEnabled) {
+                playWorkCompletionSound(soundVolume);
+            }
+            
             incrementPomos(task.id);
             const nextWorkSessions = completedWorkSessions + 1;
             if (nextWorkSessions % longBreakInterval === 0) {
@@ -92,12 +162,17 @@ export default function PomodoroTimer({
             }
             setRunning(false);
         } else {
+            // Play break completion sound
+            if (soundEnabled) {
+                playBreakCompletionSound(soundVolume);
+            }
+            
             // End of break, return to work
             setMode('work');
             setSecondsLeft(workDuration);
             setRunning(false);
         }
-    }, [secondsLeft, running, mode, task, incrementPomos, completedWorkSessions, longBreakInterval, longBreakDuration, shortBreakDuration, workDuration, setCompletedWorkSessions]);
+    }, [secondsLeft, running, mode, task, incrementPomos, completedWorkSessions, longBreakInterval, longBreakDuration, shortBreakDuration, workDuration, setCompletedWorkSessions, soundEnabled, soundVolume]);
 
     // Persist timer progress for the current task - optimized to reduce localStorage writes
     useEffect(() => {

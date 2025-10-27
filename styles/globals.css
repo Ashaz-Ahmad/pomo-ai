@@ -20,3 +20,37 @@ body {
   background: linear-gradient(to bottom right, #f8fafc 0%, #f87171 100%);
   background-attachment: fixed;
 }
+
+/* Custom slider styles */
+.slider::-webkit-slider-thumb {
+  appearance: none;
+  height: 20px;
+  width: 20px;
+  border-radius: 50%;
+  background: #ef4444;
+  cursor: pointer;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.slider::-moz-range-thumb {
+  height: 20px;
+  width: 20px;
+  border-radius: 50%;
+  background: #ef4444;
+  cursor: pointer;
+  border: none;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.slider::-webkit-slider-track {
+  background: #e2e8f0;
+  border-radius: 8px;
+  height: 8px;
+}
+
+.slider::-moz-range-track {
+  background: #e2e8f0;
+  border-radius: 8px;
+  height: 8px;
+  border: none;
+}
