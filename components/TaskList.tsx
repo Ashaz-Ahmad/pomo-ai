@@ -143,10 +143,14 @@ const TaskList = memo(function TaskList({
                                     }}
                                     placeholder="?"
                                     title="Estimated pomodoros"
-                                    className={`w-10 px-2 py-1 rounded-full text-xs font-bold text-center border focus:ring-2 focus:outline-none ${
+                                    className={`w-12 px-2 py-1 rounded-full text-xs font-bold text-center focus:ring-2 focus:outline-none ${
                                         task.id === currentTaskId
-                                            ? 'bg-red-100 text-red-700 border-red-300 focus:border-red-500 focus:ring-red-500'
-                                            : 'bg-slate-100 text-slate-500 border-slate-300 focus:border-red-500 focus:ring-red-500'
+                                            ? mode === 'work' 
+                                                ? 'bg-red-100 text-red-700 focus:ring-red-500'
+                                                : mode === 'shortBreak'
+                                                ? 'bg-blue-100 text-blue-700 focus:ring-blue-500'
+                                                : 'bg-purple-100 text-purple-700 focus:ring-purple-500'
+                                            : 'bg-slate-100 text-slate-500 focus:ring-red-500'
                                     }`}
                                 />
                             </div>

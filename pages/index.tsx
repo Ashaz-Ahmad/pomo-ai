@@ -3,8 +3,9 @@ import { useState, useEffect, useCallback, useMemo } from 'react';
 import TaskInput from '../components/TaskInput';
 import TaskList from '../components/TaskList';
 import PomodoroTimer from '../components/PomodoroTimer';
+import ChatModal from '../components/ChatModal';
 import { Task, isTask } from '../types/task';
-import { Settings as SettingsIcon } from "lucide-react";
+import { Settings as SettingsIcon, Bot } from "lucide-react";
 import toast from 'react-hot-toast';
 import SettingsModal from '../components/SettingsModal';
 
@@ -38,6 +39,9 @@ export default function Home() {
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [timerMode, setTimerMode] = useState<'work' | 'shortBreak' | 'longBreak'>('work');
   const [completedWorkSessions, setCompletedWorkSessions] = useState(0); // Global work session counter
+  const [chatOpen, setChatOpen] = useState(false);
+  const [chatTask, setChatTask] = useState<{ name: string; estimatedPomos: number; actualPomos: number } | null>(null);
+  const [chatType, setChatType] = useState<'task-completion' | 'general-help'>('general-help');
 
   // Memoized current task
   const currentTask = useMemo(() => 
@@ -99,16 +103,38 @@ export default function Home() {
 
   // Complete a task
   const toggleTaskComplete = useCallback((id: string) => {
+    const task = tasks.find(t => t.id === id);
+    const wasCompleted = task?.completed ?? false;
+    const isMarkingComplete = !wasCompleted; // Will be marked as completed after state update
+    
     setTasks(prevTasks =>
-      prevTasks.map(task =>
-        task.id === id ? { ...task, completed: !task.completed } : task
+      prevTasks.map(t =>
+        t.id === id ? { ...t, completed: !t.completed } : t
       )
     );
     setRecentlyCompletedTaskId(id);
     if (id === currentTaskId) {
       setCurrentTaskId(null);
     }
-  }, [currentTaskId]);
+
+    // If marking as complete (not uncompleting), open chat
+    if (task && isMarkingComplete) {
+      setChatTask({
+        name: task.name,
+        estimatedPomos: task.estimatedPomos || 0,
+        actualPomos: task.pomodoros
+      });
+      setChatType('task-completion');
+      setChatOpen(true);
+    }
+  }, [currentTaskId, tasks]);
+
+  // Open general help chat
+  const openGeneralChat = useCallback(() => {
+    setChatType('general-help');
+    setChatTask(null);
+    setChatOpen(true);
+  }, []);
 
   // Increment pomodoros for a task
   const incrementPomodoros = useCallback((id: string) => {
@@ -224,14 +250,24 @@ export default function Home() {
                 Smart tracking and accountability for your pomodoro productivity sessions
               </p>
             </div>
-            <button
-              className="mt-4 sm:mt-0 p-2 rounded-full hover:bg-slate-100 transition-colors focus:outline-none focus:ring-2 focus:ring-red-400"
-              onClick={() => setSettingsOpen(true)}
-              aria-label="Open timer settings"
-              title="Timer Settings"
-            >
-              <SettingsIcon className="w-7 h-7 text-slate-500 hover:text-red-500" />
-            </button>
+            <div className="mt-4 sm:mt-0 flex gap-3">
+              <button
+                className="p-2 rounded-full hover:bg-slate-100 transition-colors focus:outline-none focus:ring-2 focus:ring-red-400"
+                onClick={openGeneralChat}
+                aria-label="Open AI chat"
+                title="AI Productivity Coach"
+              >
+                <Bot className="w-7 h-7 text-slate-500 hover:text-red-500" />
+              </button>
+              <button
+                className="p-2 rounded-full hover:bg-slate-100 transition-colors focus:outline-none focus:ring-2 focus:ring-red-400"
+                onClick={() => setSettingsOpen(true)}
+                aria-label="Open timer settings"
+                title="Timer Settings"
+              >
+                <SettingsIcon className="w-7 h-7 text-slate-500 hover:text-red-500" />
+              </button>
+            </div>
           </div>
         </div>
         {/* Main Content */}
@@ -296,6 +332,19 @@ export default function Home() {
         }}
         onClose={() => setSettingsOpen(false)}
         disableSave={timerRunning}
+      />
+      <ChatModal
+        isOpen={chatOpen}
+        chatType={chatType}
+        taskName={chatTask?.name}
+        estimatedPomos={chatTask?.estimatedPomos}
+        actualPomos={chatTask?.actualPomos}
+        currentTaskName={currentTask?.name}
+        mode={timerMode}
+        onClose={() => {
+          setChatOpen(false);
+          setChatTask(null);
+        }}
       />
     </>
   );
