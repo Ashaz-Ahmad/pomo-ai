@@ -117,10 +117,28 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
   if (mode === 'shortBreak') saveButtonColor = 'bg-gradient-to-r from-blue-500 to-blue-700 hover:from-blue-600 hover:to-blue-800 shadow-blue-500/25';
   if (mode === 'longBreak') saveButtonColor = 'bg-gradient-to-r from-purple-500 to-purple-700 hover:from-purple-600 hover:to-purple-800 shadow-purple-500/25';
 
+  // Theme colors for sound settings
+  let toggleColor = 'bg-red-500';
+  let toggleFocusRing = 'focus:ring-red-500/20';
+  let sliderThumbColor = '#ef4444'; // red-500
+  let testButtonColor = 'bg-red-500 hover:bg-red-600';
+  
+  if (mode === 'shortBreak') {
+    toggleColor = 'bg-blue-500';
+    toggleFocusRing = 'focus:ring-blue-500/20';
+    sliderThumbColor = '#3b82f6'; // blue-500
+    testButtonColor = 'bg-blue-500 hover:bg-blue-600';
+  } else if (mode === 'longBreak') {
+    toggleColor = 'bg-purple-500';
+    toggleFocusRing = 'focus:ring-purple-500/20';
+    sliderThumbColor = '#a855f7'; // purple-500
+    testButtonColor = 'bg-purple-500 hover:bg-purple-600';
+  }
+
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-      <div className="bg-white rounded-2xl shadow-xl p-4 sm:p-8 w-full max-w-md relative max-h-[90vh] overflow-y-auto">
-        <h2 className="text-lg sm:text-2xl font-bold mb-4 sm:mb-6 text-slate-800">Timer Settings</h2>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 dark:bg-opacity-60">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl dark:shadow-slate-900/50 p-4 sm:p-8 w-full max-w-md relative max-h-[90vh] overflow-y-auto">
+        <h2 className="text-lg sm:text-2xl font-bold mb-4 sm:mb-6 text-slate-800 dark:text-slate-100">Timer Settings</h2>
         <form
           onSubmit={e => {
             e.preventDefault();
@@ -129,7 +147,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
         >
           <div className="space-y-2 sm:space-y-4">
             <div>
-              <label className="block text-slate-700 font-medium mb-1" htmlFor="work">Pomodoro (work) duration (minutes)</label>
+              <label className="block text-slate-700 dark:text-slate-300 font-medium mb-1" htmlFor="work">Pomodoro (work) duration (minutes)</label>
               <input
                 id="work"
                 type="text"
@@ -137,7 +155,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                 pattern="[0-9]*"
                 minLength={1}
                 maxLength={3}
-                className="w-full px-3 py-2 rounded-md border border-slate-200 focus:border-red-500 focus:ring-2 focus:ring-red-500/20 outline-none text-slate-800 placeholder-slate-500"
+                className="w-full px-3 py-2 rounded-md border border-slate-200 dark:border-slate-600 dark:bg-slate-700 focus:border-red-500 dark:focus:border-red-500 focus:ring-2 focus:ring-red-500/20 outline-none text-slate-800 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-400"
                 value={work}
                 onChange={e => setWork(e.target.value.replace(/[^0-9]/g, ''))}
                 placeholder="25"
@@ -145,7 +163,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
               />
             </div>
             <div>
-              <label className="block text-slate-700 font-medium mb-1" htmlFor="shortBreak">Short break duration (minutes)</label>
+              <label className="block text-slate-700 dark:text-slate-300 font-medium mb-1" htmlFor="shortBreak">Short break duration (minutes)</label>
               <input
                 id="shortBreak"
                 type="text"
@@ -153,7 +171,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                 pattern="[0-9]*"
                 minLength={1}
                 maxLength={2}
-                className="w-full px-3 py-2 rounded-md border border-slate-200 focus:border-red-500 focus:ring-2 focus:ring-red-500/20 outline-none text-slate-800 placeholder-slate-500"
+                className="w-full px-3 py-2 rounded-md border border-slate-200 dark:border-slate-600 dark:bg-slate-700 focus:border-red-500 dark:focus:border-red-500 focus:ring-2 focus:ring-red-500/20 outline-none text-slate-800 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-400"
                 value={shortBreak}
                 onChange={e => setShortBreak(e.target.value.replace(/[^0-9]/g, ''))}
                 placeholder="5"
@@ -161,7 +179,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
               />
             </div>
             <div>
-              <label className="block text-slate-700 font-medium mb-1" htmlFor="longBreak">Long break duration (minutes)</label>
+              <label className="block text-slate-700 dark:text-slate-300 font-medium mb-1" htmlFor="longBreak">Long break duration (minutes)</label>
               <input
                 id="longBreak"
                 type="text"
@@ -169,7 +187,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                 pattern="[0-9]*"
                 minLength={1}
                 maxLength={2}
-                className="w-full px-3 py-2 rounded-md border border-slate-200 focus:border-red-500 focus:ring-2 focus:ring-red-500/20 outline-none text-slate-800 placeholder-slate-500"
+                className="w-full px-3 py-2 rounded-md border border-slate-200 dark:border-slate-600 dark:bg-slate-700 focus:border-red-500 dark:focus:border-red-500 focus:ring-2 focus:ring-red-500/20 outline-none text-slate-800 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-400"
                 value={longBreak}
                 onChange={e => setLongBreak(e.target.value.replace(/[^0-9]/g, ''))}
                 placeholder="15"
@@ -177,7 +195,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
               />
             </div>
             <div>
-              <label className="block text-slate-700 font-medium mb-1" htmlFor="longBreakInterval">Long break after how many work sessions?</label>
+              <label className="block text-slate-700 dark:text-slate-300 font-medium mb-1" htmlFor="longBreakInterval">Long break after how many work sessions?</label>
               <input
                 id="longBreakInterval"
                 type="text"
@@ -185,28 +203,28 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                 pattern="[0-9]*"
                 minLength={1}
                 maxLength={2}
-                className="w-full px-3 py-2 rounded-md border border-slate-200 focus:border-red-500 focus:ring-2 focus:ring-red-500/20 outline-none text-slate-800 placeholder-slate-500"
+                className="w-full px-3 py-2 rounded-md border border-slate-200 dark:border-slate-600 dark:bg-slate-700 focus:border-red-500 dark:focus:border-red-500 focus:ring-2 focus:ring-red-500/20 outline-none text-slate-800 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-400"
                 value={longBreakInterval}
                 onChange={e => setLongBreakInterval(e.target.value.replace(/[^0-9]/g, ''))}
                 placeholder="4"
                 required
               />
             </div>
-            <div className="text-sm text-orange-600 bg-orange-50 border border-orange-200 rounded px-3 py-2 flex items-center gap-2">
-              <svg className="w-6 h-6 sm:w-8 sm:h-8 text-orange-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M21 12A9 9 0 1 1 3 12a9 9 0 0 1 18 0ZM12 7v.01"/></svg>
+            <div className="text-sm text-orange-600 dark:text-orange-400 bg-orange-50 dark:bg-orange-900/30 border border-orange-200 dark:border-orange-800 rounded px-3 py-2 flex items-center gap-2">
+              <svg className="w-6 h-6 sm:w-8 sm:h-8 text-orange-500 dark:text-orange-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" d="M12 9v2m0 4h.01M21 12A9 9 0 1 1 3 12a9 9 0 0 1 18 0ZM12 7v.01"/></svg>
               Duration settings will be applied to all tasks. Changing them will reset the timers across all tasks.
             </div>
             {/* Sound Settings section follows */}
-            <div className="border-t border-slate-200 pt-2 sm:pt-4 mt-2 sm:mt-4">
-              <h3 className="text-lg sm:text-2xl font-bold mb-2 sm:mb-6 text-slate-800">Sound Settings</h3>
+            <div className="border-t border-slate-200 dark:border-slate-700 pt-2 sm:pt-4 mt-2 sm:mt-4">
+              <h3 className="text-lg sm:text-2xl font-bold mb-2 sm:mb-6 text-slate-800 dark:text-slate-100">Sound Settings</h3>
               <div className="flex items-center justify-between mb-2 sm:mb-3">
-                <label className="text-slate-700 font-medium" htmlFor="soundEnabled">
+                <label className="text-slate-700 dark:text-slate-300 font-medium" htmlFor="soundEnabled">
                   Enable timer sounds (recommended)
                 </label>
                 <button
                   type="button"
-                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-red-500/20 ${
-                    soundEnabled ? 'bg-red-500' : 'bg-slate-300'
+                  className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors focus:outline-none focus:ring-2 ${toggleFocusRing} ${
+                    soundEnabled ? toggleColor : 'bg-slate-300 dark:bg-slate-600'
                   }`}
                   onClick={() => setSoundEnabled(!soundEnabled)}
                   aria-label={soundEnabled ? 'Disable sounds' : 'Enable sounds'}
@@ -220,7 +238,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
               </div>
               {soundEnabled && (
                 <div>
-                  <label className="block text-slate-700 font-medium mb-1" htmlFor="soundVolume">
+                  <label className="block text-slate-700 dark:text-slate-300 font-medium mb-1" htmlFor="soundVolume">
                     Sound volume: {Math.round(soundVolume * 100)}%
                   </label>
                   <input
@@ -229,11 +247,15 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                     min="0"
                     max="1"
                     step="0.1"
-                    className="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer slider"
+                    className="w-full h-2 bg-slate-200 dark:bg-slate-700 rounded-lg appearance-none cursor-pointer slider"
+                    style={{
+                      accentColor: sliderThumbColor,
+                      '--slider-thumb-color': sliderThumbColor,
+                    } as React.CSSProperties & { '--slider-thumb-color': string }}
                     value={soundVolume}
                     onChange={e => setSoundVolume(parseFloat(e.target.value))}
                   />
-                  <div className="grid grid-cols-3 text-xs text-slate-500 mt-1">
+                  <div className="grid grid-cols-3 text-xs text-slate-500 dark:text-slate-400 mt-1">
                     <span className="text-left">0%</span>
                     <span className="text-center">50%</span>
                     <span className="text-right">100%</span>
@@ -241,7 +263,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
                   {/* Test Sound Button */}
                   <button
                     type="button"
-                    className="mt-2 px-3 py-2 rounded-md bg-red-500 hover:bg-red-600 text-white font-semibold shadow"
+                    className={`mt-2 px-3 py-2 rounded-md ${testButtonColor} text-white font-semibold shadow`}
                     onClick={() => playWorkCompletionSound(soundVolume)}
                   >
                     Test Sound
@@ -254,7 +276,7 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
             <div className="flex justify-end gap-2 sm:gap-3">
               <button
                 type="button"
-                className="px-3 py-2 rounded-md bg-slate-100 text-slate-700 font-semibold hover:bg-slate-200"
+                className="px-3 py-2 rounded-md bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-300 font-semibold hover:bg-slate-200 dark:hover:bg-slate-600"
                 onClick={onClose}
               >
                 Cancel
@@ -269,14 +291,14 @@ const SettingsModal: React.FC<SettingsModalProps> = ({
               </button>
             </div>
             {disableSave && (
-              <div className="text-sm text-red-500 text-center mt-2">
+              <div className="text-sm text-red-500 dark:text-red-400 text-center mt-2">
                 Pause the timer to save settings.
               </div>
             )}
           </div>
         </form>
         <button
-          className="absolute top-2 right-2 sm:top-3 sm:right-3 text-slate-400 hover:text-red-500 text-2xl font-bold focus:outline-none"
+          className="absolute top-2 right-2 sm:top-3 sm:right-3 text-slate-400 dark:text-slate-500 hover:text-red-500 dark:hover:text-red-400 text-2xl font-bold focus:outline-none"
           onClick={onClose}
           aria-label="Close settings"
         >

@@ -34,9 +34,44 @@ const ChatModal = ({ isOpen, chatType, taskName, estimatedPomos, actualPomos, cu
     scrollToBottom();
   }, [messages]);
 
-  // Initialize with AI message when modal opens
+  // Load general chat history from localStorage when modal opens
+  useEffect(() => {
+    if (isOpen && chatType === 'general-help') {
+      const storedHistory = localStorage.getItem('pomo_general_chat_history');
+      if (storedHistory) {
+        try {
+          const parsedHistory = JSON.parse(storedHistory);
+          if (Array.isArray(parsedHistory) && parsedHistory.length > 0) {
+            setMessages(parsedHistory);
+          }
+        } catch (e) {
+          console.error('Error loading chat history:', e);
+        }
+      }
+    } else if (isOpen && chatType === 'task-completion') {
+      // Task-completion chat always starts fresh
+      setMessages([]);
+    }
+  }, [isOpen, chatType]);
+
+  // Initialize with AI message when modal opens (only if no existing messages and not task-completion with data)
   useEffect(() => {
     if (isOpen && messages.length === 0) {
+      // For general-help, check if we just loaded history (give it a moment)
+      if (chatType === 'general-help') {
+        const storedHistory = localStorage.getItem('pomo_general_chat_history');
+        if (storedHistory) {
+          try {
+            const parsedHistory = JSON.parse(storedHistory);
+            if (Array.isArray(parsedHistory) && parsedHistory.length > 0) {
+              return; // Don't initialize if we have history
+            }
+          } catch {
+            // Continue to initialization if parsing fails
+          }
+        }
+      }
+
       const initializeChat = async () => {
         setIsLoading(true);
         
@@ -66,7 +101,13 @@ const ChatModal = ({ isOpen, chatType, taskName, estimatedPomos, actualPomos, cu
           const fallbackMessage = chatType === 'task-completion' 
             ? 'Great job completing your task! How do you think the session went?'
             : 'How can I help you with your productivity today?';
-          setMessages([{ role: 'assistant', content: data.response || fallbackMessage }]);
+          const initialMessage = { role: 'assistant' as const, content: data.response || fallbackMessage };
+          setMessages([initialMessage]);
+          
+          // Save to localStorage for general-help chat
+          if (chatType === 'general-help') {
+            localStorage.setItem('pomo_general_chat_history', JSON.stringify([initialMessage]));
+          }
         } catch (error) {
           console.error('Error generating initial message:', error);
           let fallbackMessage: string;
@@ -79,7 +120,13 @@ const ChatModal = ({ isOpen, chatType, taskName, estimatedPomos, actualPomos, cu
               ? `Hi! I see you're working on "${currentTaskName}". How can I help you with your productivity today?`
               : 'Hi! How can I help you with your productivity today?';
           }
-          setMessages([{ role: 'assistant', content: fallbackMessage }]);
+          const initialMessage = { role: 'assistant' as const, content: fallbackMessage };
+          setMessages([initialMessage]);
+          
+          // Save to localStorage for general-help chat
+          if (chatType === 'general-help') {
+            localStorage.setItem('pomo_general_chat_history', JSON.stringify([initialMessage]));
+          }
         } finally {
           setIsLoading(false);
         }
@@ -88,13 +135,15 @@ const ChatModal = ({ isOpen, chatType, taskName, estimatedPomos, actualPomos, cu
     }
   }, [isOpen, messages.length, chatType, taskName, estimatedPomos, actualPomos, currentTaskName]);
 
-  // Reset chat when modal closes
+  // Reset chat when modal closes (only for task-completion, keep general-help history)
   useEffect(() => {
     if (!isOpen) {
-      setMessages([]);
+      if (chatType === 'task-completion') {
+        setMessages([]);
+      }
       setInput('');
     }
-  }, [isOpen]);
+  }, [isOpen, chatType]);
 
   const handleSend = async () => {
     if (!input.trim() || isLoading) return;
@@ -104,6 +153,11 @@ const ChatModal = ({ isOpen, chatType, taskName, estimatedPomos, actualPomos, cu
     setMessages(updatedMessages);
     setInput('');
     setIsLoading(true);
+
+    // Save user message to localStorage for general-help chat
+    if (chatType === 'general-help') {
+      localStorage.setItem('pomo_general_chat_history', JSON.stringify(updatedMessages));
+    }
 
     try {
       const response = await fetch('/api/chat', {
@@ -117,13 +171,26 @@ const ChatModal = ({ isOpen, chatType, taskName, estimatedPomos, actualPomos, cu
       if (!response.ok) throw new Error('Failed to get AI response');
 
       const data = await response.json();
-      setMessages([...updatedMessages, { role: 'assistant', content: data.response }]);
+      const finalMessages = [...updatedMessages, { role: 'assistant' as const, content: data.response }];
+      setMessages(finalMessages);
+      
+      // Save assistant response to localStorage for general-help chat
+      if (chatType === 'general-help') {
+        localStorage.setItem('pomo_general_chat_history', JSON.stringify(finalMessages));
+      }
     } catch (error) {
       console.error('Error sending message:', error);
-      setMessages([...updatedMessages, { 
-        role: 'assistant', 
+      const errorMessage = { 
+        role: 'assistant' as const, 
         content: 'Sorry, I encountered an error. Could you try asking again?' 
-      }]);
+      };
+      const finalMessages = [...updatedMessages, errorMessage];
+      setMessages(finalMessages);
+      
+      // Save error message to localStorage for general-help chat
+      if (chatType === 'general-help') {
+        localStorage.setItem('pomo_general_chat_history', JSON.stringify(finalMessages));
+      }
     } finally {
       setIsLoading(false);
     }
@@ -170,25 +237,25 @@ const ChatModal = ({ isOpen, chatType, taskName, estimatedPomos, actualPomos, cu
     : 'text-purple-600';
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40">
-      <div className="bg-white rounded-2xl shadow-xl w-full max-w-2xl max-h-[80vh] flex flex-col">
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 dark:bg-opacity-60">
+      <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-xl dark:shadow-slate-900/50 w-full max-w-2xl max-h-[80vh] flex flex-col">
         {/* Header */}
-        <div className="flex items-center justify-between p-6 border-b border-slate-200">
+        <div className="flex items-center justify-between p-6 border-b border-slate-200 dark:border-slate-700">
           <div className="flex items-center gap-3">
             <div className={`w-10 h-10 ${iconBg} rounded-lg flex items-center justify-center`}>
               <Bot className="w-5 h-5 text-white" />
             </div>
             <div>
-              <h2 className="text-xl font-bold text-slate-800">PomoAI - Your Productivity Coach</h2>
-              <p className="text-sm text-slate-500">Reflect on your work</p>
+              <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100">PomoAI - Your Productivity Coach</h2>
+              <p className="text-sm text-slate-500 dark:text-slate-400">Reflect on your work</p>
             </div>
           </div>
           <button
-            className="p-2 hover:bg-slate-100 rounded-full transition-colors"
+            className="p-2 hover:bg-slate-100 dark:hover:bg-slate-700 rounded-full transition-colors"
             onClick={onClose}
             aria-label="Close chat"
           >
-            <X className="w-5 h-5 text-slate-500" />
+            <X className="w-5 h-5 text-slate-500 dark:text-slate-400" />
           </button>
         </div>
 
@@ -210,7 +277,7 @@ const ChatModal = ({ isOpen, chatType, taskName, estimatedPomos, actualPomos, cu
                 className={`rounded-2xl px-4 py-3 max-w-[80%] ${
                   message.role === 'user'
                     ? `${userMessageBg} text-white`
-                    : 'bg-slate-100 text-slate-800'
+                    : 'bg-slate-100 dark:bg-slate-700 text-slate-800 dark:text-slate-100'
                 }`}
               >
                 <p className="whitespace-pre-wrap">{message.content}</p>
@@ -227,11 +294,11 @@ const ChatModal = ({ isOpen, chatType, taskName, estimatedPomos, actualPomos, cu
               <div className={`w-8 h-8 ${iconBg} rounded-full flex items-center justify-center flex-shrink-0 mt-1`}>
                 <Bot className="w-4 h-4 text-white" />
               </div>
-              <div className="bg-slate-100 rounded-2xl px-4 py-3">
+              <div className="bg-slate-100 dark:bg-slate-700 rounded-2xl px-4 py-3">
                 <div className="flex gap-1">
-                  <span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
-                  <span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
-                  <span className="w-2 h-2 bg-slate-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
+                  <span className="w-2 h-2 bg-slate-400 dark:bg-slate-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>
+                  <span className="w-2 h-2 bg-slate-400 dark:bg-slate-500 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></span>
+                  <span className="w-2 h-2 bg-slate-400 dark:bg-slate-500 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></span>
                 </div>
               </div>
             </div>
@@ -240,10 +307,10 @@ const ChatModal = ({ isOpen, chatType, taskName, estimatedPomos, actualPomos, cu
         </div>
 
         {/* Input */}
-        <div className="p-6 border-t border-slate-200">
+        <div className="p-6 border-t border-slate-200 dark:border-slate-700">
           <div className="flex gap-3">
             <textarea
-              className="flex-1 px-4 py-2 rounded-xl border border-slate-300 focus:border-red-500 focus:ring-2 focus:ring-red-500/20 outline-none resize-none text-slate-800"
+              className="flex-1 px-4 py-2 rounded-xl border border-slate-300 dark:border-slate-600 dark:bg-slate-700 focus:border-red-500 dark:focus:border-red-500 focus:ring-2 focus:ring-red-500/20 outline-none resize-none text-slate-800 dark:text-slate-100 placeholder-slate-500 dark:placeholder-slate-400"
               placeholder="Type your message..."
               value={input}
               onChange={(e) => setInput(e.target.value)}

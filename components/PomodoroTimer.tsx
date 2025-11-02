@@ -311,23 +311,23 @@ export default function PomodoroTimer({
         : 'bg-purple-100 text-purple-700';
 
     return (
-        <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-8">
+        <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg dark:shadow-slate-900/50 border border-slate-200 dark:border-slate-700 p-8">
             {/* Header */}
             <div className="text-center mb-5">
                 <div className="flex items-center justify-center gap-3 mb-4">
                     <div className={`w-8 h-8 bg-gradient-to-r ${iconBgColor} rounded-lg flex items-center justify-center`}>
                         <Timer className="w-4 h-4 text-white" />
                     </div>
-                    <h2 className="text-xl font-bold text-slate-800">Focus Timer</h2>
+                    <h2 className="text-xl font-bold text-slate-800 dark:text-slate-100">Focus Timer</h2>
                 </div>
                 <div className="mb-2">
                     <span className={`inline-block px-3 py-1 rounded-full text-xs font-bold border ${labelBgColor}`}>{modeLabel}</span>
                 </div>
                 {task ? (
-                    <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
-                        <p className="text-slate-600 text-sm font-medium mb-1">Currently working on</p>
+                    <div className="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-4 border border-slate-200 dark:border-slate-600">
+                        <p className="text-slate-600 dark:text-slate-300 text-sm font-medium mb-1">Currently working on</p>
                         <div className="flex items-center justify-center gap-2">
-                            <p className="text-slate-800 font-semibold text-lg">{task.name}</p>
+                            <p className="text-slate-800 dark:text-slate-100 font-semibold text-lg">{task.name}</p>
                             <span className={`${pomoBadgeColor} px-2 py-1 rounded-full text-sm font-bold flex items-center gap-1`}>
                                 <Timer className="w-3 h-3" />
                                 {task.pomodoros}
@@ -335,8 +335,8 @@ export default function PomodoroTimer({
                         </div>
                     </div>
                 ) : (
-                    <div className="bg-slate-50 rounded-xl p-4 border border-slate-200">
-                        <p className="text-slate-500 font-medium">Select a task to start focusing</p>
+                    <div className="bg-slate-50 dark:bg-slate-700/50 rounded-xl p-4 border border-slate-200 dark:border-slate-600">
+                        <p className="text-slate-500 dark:text-slate-400 font-medium">Select a task to start focusing</p>
                     </div>
                 )}
             </div>
@@ -353,7 +353,7 @@ export default function PomodoroTimer({
                             stroke="currentColor"
                             strokeWidth="2"
                             fill="none"
-                            className="text-slate-200"
+                            className="text-slate-200 dark:text-slate-700"
                         />
                         <circle
                             cx="50"
@@ -371,17 +371,17 @@ export default function PomodoroTimer({
 
                     {/* Timer Text */}
                     <div className="absolute inset-0 flex items-center justify-center">
-                        <div className="text-center">
-                            <div 
-                                className="text-4xl font-mono font-bold text-slate-800 mb-1"
-                                aria-live="polite"
-                                aria-atomic="true"
-                            >
-                                {String(minutes).padStart(2, "0")}:{String(seconds).padStart(2, "0")}
-                            </div>
-                            {task && mode === 'work' && (
-                                <div className="text-sm text-slate-500 font-medium">Session {task.pomodoros + 1}</div>
-                            )}
+                            <div className="text-center">
+                                <div 
+                                    className="text-4xl font-mono font-bold text-slate-800 dark:text-slate-100 mb-1"
+                                    aria-live="polite"
+                                    aria-atomic="true"
+                                >
+                                    {String(minutes).padStart(2, "0")}:{String(seconds).padStart(2, "0")}
+                                </div>
+                                {task && mode === 'work' && (
+                                    <div className="text-sm text-slate-500 dark:text-slate-400 font-medium">Session {task.pomodoros + 1}</div>
+                                )}
                         </div>
                     </div>
                 </div>
@@ -399,7 +399,7 @@ export default function PomodoroTimer({
                     {running ? "Pause" : "Start"}
                 </button>
                 <button
-                    className="flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-slate-600 bg-slate-100 hover:bg-slate-200 transition-all duration-200 transform hover:scale-105"
+                    className="flex items-center gap-2 px-6 py-3 rounded-xl font-semibold text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 hover:bg-slate-200 dark:hover:bg-slate-600 transition-all duration-200 transform hover:scale-105"
                     onClick={reset}
                     aria-label="Reset timer"
                 >

@@ -5,7 +5,7 @@ import TaskList from '../components/TaskList';
 import PomodoroTimer from '../components/PomodoroTimer';
 import ChatModal from '../components/ChatModal';
 import { Task, isTask } from '../types/task';
-import { Settings as SettingsIcon, Bot } from "lucide-react";
+import { Settings as SettingsIcon, Bot, Moon, Sun } from "lucide-react";
 import toast from 'react-hot-toast';
 import SettingsModal from '../components/SettingsModal';
 
@@ -42,6 +42,15 @@ export default function Home() {
   const [chatOpen, setChatOpen] = useState(false);
   const [chatTask, setChatTask] = useState<{ name: string; estimatedPomos: number; actualPomos: number } | null>(null);
   const [chatType, setChatType] = useState<'task-completion' | 'general-help'>('general-help');
+  const [darkMode, setDarkMode] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const stored = localStorage.getItem('darkMode');
+      if (stored !== null) {
+        return stored === 'true';
+      }
+    }
+    return false;
+  });
 
   // Memoized current task
   const currentTask = useMemo(() => 
@@ -224,6 +233,27 @@ export default function Home() {
     setHasMounted(true);
   }, []);
 
+  // Apply dark mode class to document
+  useEffect(() => {
+    if (darkMode) {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [darkMode]);
+
+  // Persist dark mode preference
+  useEffect(() => {
+    if (hasMounted) {
+      localStorage.setItem('darkMode', darkMode.toString());
+    }
+  }, [darkMode, hasMounted]);
+
+  // Toggle dark mode
+  const toggleDarkMode = useCallback(() => {
+    setDarkMode(prev => !prev);
+  }, []);
+
   // Only return null after all hooks
   if (!hasMounted) return null;
 
@@ -234,38 +264,50 @@ export default function Home() {
         <meta name="description" content="Pomodoro + Todo List AI Productivity Tool" />
         <link rel="icon" href="/timer.ico" />
       </Head>
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-red-50 overflow-x-hidden">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-red-50 dark:from-slate-900 dark:to-slate-800 overflow-x-hidden">
         {/* Header */}
-        <div className="bg-white/80 backdrop-blur-sm border-b border-slate-200 py-6">
+        <div className="bg-white/80 dark:bg-slate-800/80 backdrop-blur-sm border-b border-slate-200 dark:border-slate-700 py-6">
           <div className="w-full px-4 flex flex-col items-center justify-center gap-2 sm:flex-row sm:justify-between sm:max-w-6xl sm:mx-auto sm:px-6">
             <div className="flex flex-col items-center flex-1">
               <h1 className={`text-4xl font-bold bg-clip-text text-transparent text-center w-full 
                 ${timerMode === 'work' ? 'bg-gradient-to-r from-red-600 to-orange-600' : ''}
                 ${timerMode === 'shortBreak' ? 'bg-gradient-to-r from-blue-500 to-blue-700' : ''}
-                ${timerMode === 'longBreak' ? 'bg-gradient-to-r from-green-500 to-green-700' : ''}
+                ${timerMode === 'longBreak' ? 'bg-gradient-to-r from-purple-500 to-purple-700' : ''}
               `}>
                 PomoAI
               </h1>
-              <p className="text-slate-600 font-medium mt-2 text-center">
+              <p className="text-slate-600 dark:text-slate-300 font-medium mt-2 text-center">
                 Smart tracking and accountability for your pomodoro productivity sessions
               </p>
             </div>
             <div className="mt-4 sm:mt-0 flex gap-3">
               <button
-                className="p-2 rounded-full hover:bg-slate-100 transition-colors focus:outline-none focus:ring-2 focus:ring-red-400"
+                className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors focus:outline-none focus:ring-2 focus:ring-red-400"
+                onClick={toggleDarkMode}
+                aria-label="Toggle dark mode"
+                title="Toggle Dark Mode"
+              >
+                {darkMode ? (
+                  <Sun className="w-7 h-7 text-slate-500 dark:text-slate-300 hover:text-yellow-500" />
+                ) : (
+                  <Moon className="w-7 h-7 text-slate-500 hover:text-blue-500" />
+                )}
+              </button>
+              <button
+                className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors focus:outline-none focus:ring-2 focus:ring-red-400"
                 onClick={openGeneralChat}
                 aria-label="Open AI chat"
                 title="AI Productivity Coach"
               >
-                <Bot className="w-7 h-7 text-slate-500 hover:text-red-500" />
+                <Bot className="w-7 h-7 text-slate-500 dark:text-slate-300 hover:text-red-500" />
               </button>
               <button
-                className="p-2 rounded-full hover:bg-slate-100 transition-colors focus:outline-none focus:ring-2 focus:ring-red-400"
+                className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-700 transition-colors focus:outline-none focus:ring-2 focus:ring-red-400"
                 onClick={() => setSettingsOpen(true)}
                 aria-label="Open timer settings"
                 title="Timer Settings"
               >
-                <SettingsIcon className="w-7 h-7 text-slate-500 hover:text-red-500" />
+                <SettingsIcon className="w-7 h-7 text-slate-500 dark:text-slate-300 hover:text-red-500" />
               </button>
             </div>
           </div>
@@ -274,7 +316,7 @@ export default function Home() {
         <main className="w-full px-2 py-4 sm:max-w-6xl sm:mx-auto sm:px-6 sm:py-8">
           {/* Responsive card: on mobile, wrap both timer and tasks in one card; on lg+, use grid */}
           <div className="lg:grid lg:grid-cols-5 gap-8">
-            <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-4 sm:p-6 w-full max-w-full flex flex-col lg:col-span-5 lg:flex-row lg:bg-transparent lg:shadow-none lg:border-none lg:p-0">
+            <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg dark:shadow-slate-900/50 border border-slate-200 dark:border-slate-700 p-4 sm:p-6 w-full max-w-full flex flex-col lg:col-span-5 lg:flex-row lg:bg-transparent lg:shadow-none lg:border-none lg:p-0">
               {/* timer section */}
               <div className="space-y-6 w-full lg:w-2/5 lg:pr-6">
                 <PomodoroTimer
@@ -295,7 +337,7 @@ export default function Home() {
               </div>
               {/* Tasks section */}
               <div className="space-y-6 w-full mt-8 lg:mt-0 lg:w-3/5">
-                <div className="bg-white rounded-2xl shadow-lg border border-slate-200 p-4 sm:p-6 w-full max-w-full">
+                <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg dark:shadow-slate-900/50 border border-slate-200 dark:border-slate-700 p-4 sm:p-6 w-full max-w-full">
                   <TaskInput onAdd={addTask} />
                   <TaskList
                     tasks={tasks}
